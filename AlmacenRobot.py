@@ -1,6 +1,5 @@
 ALGORITMO Robot_Almacen
 
-```
 Mostrar menú
 
 MIENTRAS el usuario no elija salir HACER
@@ -70,6 +69,5 @@ MIENTRAS el usuario no elija salir HACER
     FIN SEGÚN
 
 FIN MIENTRAS
-```
 
 FIN ALGORITMO
