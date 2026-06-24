@@ -1,275 +1,75 @@
-from collections import deque
-import copy
-import time
+ALGORITMO Robot_Almacen
 
-# El almacen es una cuadricula donde:
-# 0 = espacio vacio
-# 1 = obstaculo
-# 2 = posicion inicial del robot
-# 3 = paquete
-# 4 = zona de entrega
+```
+Mostrar menú
 
-ALMACEN = [
-    [0, 0, 0, 1, 0],
-    [0, 2, 0, 1, 3],
-    [0, 0, 0, 0, 0],
-    [1, 1, 0, 1, 0],
-    [0, 0, 0, 3, 4],
-]
+MIENTRAS el usuario no elija salir HACER
 
-INICIO = [1, 1]
-ZONA_ENTREGA = [4, 4]
+    Mostrar opciones:
+        1. Entrega automática
+        2. Control manual
+        3. Ver almacén
+        4. Salir
 
-FILAS = len(ALMACEN)
-COLS = len(ALMACEN[0])
+    Leer opción
 
+    SEGÚN opción HACER
 
-def mostrar_almacen(almacen, robot, ruta=None, cargando=False):
+        CASO 1:
+            Buscar paquete
 
-    simbolos = {0: " . ", 1: "###", 3: "[P]", 4: "[E]"}
+            MIENTRAS existan paquetes HACER
 
-    pasos_ruta = set()
-    if ruta:
-        for p in ruta[1:-1]:
-            pasos_ruta.add((p[0], p[1]))
+                Calcular camino al paquete
+                Mover robot al paquete
+                Recoger paquete
 
-    print("\n   " + "  ".join(str(c) for c in range(COLS)))
+                Calcular camino a zona de entrega
+                Mover robot a zona de entrega
+                Entregar paquete
 
-    for f in range(FILAS):
-        linea = f"{f} |"
-        for c in range(COLS):
-            if [f, c] == robot:
-                linea += "[r]" if cargando else "[R]"
-            elif (f, c) in pasos_ruta:
-                linea += " * "
-            else:
-                linea += simbolos.get(almacen[f][c], " . ")
-        print(linea)
+            FIN MIENTRAS
 
-    print()
+        CASO 2:
+            Mostrar almacén
 
+            Pedir fila destino
+            Pedir columna destino
 
-def buscar_paquete(almacen):
+            SI la posición es válida ENTONCES
 
-    for f in range(FILAS):
-        for c in range(COLS):
-            if almacen[f][c] == 3:
-                return [f, c]
+                Calcular camino
+                Mover robot al destino
 
-    return None
+                SI existe paquete ENTONCES
+                    Recoger paquete
 
+                    Preguntar si desea entregarlo
 
-def buscar_camino(origen, destino, almacen):
+                    SI respuesta = "s" ENTONCES
+                        Calcular camino a zona de entrega
+                        Mover robot
+                        Entregar paquete
+                    FIN SI
 
-    cola = deque([[origen]])
-    visitados = {(origen[0], origen[1])}
+                FIN SI
 
-    while cola:
-        camino = cola.popleft()
-        pos_actual = camino[-1]
+            SINO
+                Mostrar error
+            FIN SI
 
-        if pos_actual == destino:
-            return camino
+        CASO 3:
+            Mostrar almacén
 
-        for df, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nf = pos_actual[0] + df
-            nc = pos_actual[1] + dc
+        CASO 4:
+            Finalizar programa
 
-            dentro_del_mapa = 0 <= nf < FILAS and 0 <= nc < COLS
+        OTRO CASO:
+            Mostrar "Opción inválida"
 
-            if (
-                dentro_del_mapa
-                and almacen[nf][nc] != 1
-                and (nf, nc) not in visitados
-            ):
-                visitados.add((nf, nc))
-                cola.append(camino + [[nf, nc]])
+    FIN SEGÚN
 
-    return None
+FIN MIENTRAS
+```
 
-
-def mover_robot(camino, almacen, pos, cargando=False):
-
-    for paso in camino[1:]:
-        pos[0] = paso[0]
-        pos[1] = paso[1]
-
-        estado = "cargando" if cargando else "vacio"
-
-        print(
-            f"Robot [{estado}] -> "
-            f"fila {paso[0]}, columna {paso[1]}"
-        )
-
-        mostrar_almacen(almacen, pos, camino, cargando)
-
-        time.sleep(0.3)
-
-
-def entregar_paquetes():
-
-    almacen = copy.deepcopy(ALMACEN)
-    pos = list(INICIO)
-    entregados = 0
-
-    while True:
-
-        paquete = buscar_paquete(almacen)
-
-        if paquete is None:
-            print(
-                f"\nProceso terminado. "
-                f"Paquetes entregados: {entregados}"
-            )
-            break
-
-        print(f"\nPaquete encontrado en {paquete}")
-
-        camino = buscar_camino(pos, paquete, almacen)
-
-        if camino is None:
-            print("No existe camino al paquete.")
-            break
-
-        mover_robot(camino, almacen, pos)
-
-        almacen[paquete[0]][paquete[1]] = 0
-
-        print("Paquete recogido.")
-
-        camino = buscar_camino(
-            pos,
-            ZONA_ENTREGA,
-            almacen
-        )
-
-        if camino is None:
-            print("No existe camino a la zona de entrega.")
-            break
-
-        mover_robot(
-            camino,
-            almacen,
-            pos,
-            cargando=True
-        )
-
-        print("Paquete entregado.")
-        entregados += 1
-
-
-def mover_manual():
-
-    almacen = copy.deepcopy(ALMACEN)
-    pos = list(INICIO)
-
-    while True:
-
-        mostrar_almacen(almacen, pos)
-
-        try:
-            fila = int(input(f"Fila destino (0-{FILAS-1}): "))
-            col = int(input(f"Columna destino (0-{COLS-1}): "))
-        except ValueError:
-            print("Ingrese numeros validos.")
-            continue
-
-        if not (0 <= fila < FILAS and 0 <= col < COLS):
-            print("Posicion fuera del mapa.")
-            continue
-
-        if almacen[fila][col] == 1:
-            print("Hay un obstaculo ahi.")
-            continue
-
-        camino = buscar_camino(
-            pos,
-            [fila, col],
-            almacen
-        )
-
-        if camino is None:
-            print("No existe camino a esa posicion.")
-            continue
-
-        mover_robot(camino, almacen, pos)
-
-        print(f"Robot llego a [{fila}, {col}]")
-
-        if almacen[fila][col] == 3:
-
-            print("Hay un paquete aqui.")
-
-            almacen[fila][col] = 0
-
-            print("Paquete recogido.")
-
-            opcion = input(
-                "Llevar a zona de entrega? (s/n): "
-            ).lower()
-
-            if opcion == "s":
-
-                camino = buscar_camino(
-                    pos,
-                    ZONA_ENTREGA,
-                    almacen
-                )
-
-                if camino:
-
-                    mover_robot(
-                        camino,
-                        almacen,
-                        pos,
-                        cargando=True
-                    )
-
-                    print("Paquete entregado.")
-
-                else:
-                    print(
-                        "No existe camino a la zona de entrega."
-                    )
-
-        seguir = input(
-            "\nMover el robot de nuevo? (s/n): "
-        ).lower()
-
-        if seguir != "s":
-            break
-
-
-def menu():
-
-    while True:
-
-        print("\n==========================")
-        print("     ROBOT DE ALMACEN     ")
-        print("==========================")
-        print("1. Entrega automatica")
-        print("2. Control manual")
-        print("3. Ver almacen")
-        print("4. Salir")
-
-        opcion = input("\nElige una opcion: ")
-
-        if opcion == "1":
-            entregar_paquetes()
-
-        elif opcion == "2":
-            mover_manual()
-
-        elif opcion == "3":
-            mostrar_almacen(ALMACEN, INICIO)
-
-        elif opcion == "4":
-            print("Programa finalizado.")
-            break
-
-        else:
-            print("Opcion invalida.")
-
-
-if __name__ == "__main__":
-    menu()
+FIN ALGORITMO
